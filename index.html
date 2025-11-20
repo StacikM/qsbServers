@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>QSB Servers</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container">
+      <h1>QSB Servers</h1>
+      <div class="controls">
+        <input id="search" placeholder="Search IP, SteamID, or port..." />
+        <select id="regionFilter">
+          <option value="">All regions</option>
+        </select>
+        <select id="sortBy">
+          <option value="players_desc">Players ▲</option>
+          <option value="players_asc">Players ▼</option>
+          <option value="newest">Newest</option>
+        </select>
+        <button id="refreshBtn">Refresh</button>
+        <label class="auto">
+          Auto
+          <input id="autoRefresh" type="checkbox" checked />
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="stats" class="stats">Loading…</div>
+
+    <div id="list" class="list"></div>
+
+    <div class="pager">
+      <button id="prevPage" disabled>Prev</button>
+      <span id="pageInfo">Page 1</span>
+      <button id="nextPage" disabled>Next</button>
+    </div>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
