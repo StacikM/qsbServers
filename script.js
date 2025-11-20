@@ -99,7 +99,7 @@ function renderCard(i) {
       <div class="meta">
         <div class="badge">${players} / ${maxPlayers}</div>
         <div class="small">Region: ${region}</div>
-        <div class="small">Host SteamID: ${steam}</div>
+        <div class="small">Host SteamID (use this to connect): ${steam}</div>
         <div class="small">Lobby ID: ${i.lobbyId}</div>
       </div>
       <p class="small">Version: ${i.version || "unknown"}</p>
