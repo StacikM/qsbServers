@@ -115,10 +115,10 @@ function renderCard(i) {
 
 function onJoin(ip, port) {
   const addr = `${ip}:${port}`;
-  navigator.clipboard?.writeText(addr).then(()=> {
-    alert(`Address copied: ${addr}\nUse this address in-game to connect.`);
+  navigator.clipboard?.writeText(steam).then(()=> {
+    alert(`Address copied: ${steam}\nUse this address in-game to connect.`);
   }).catch(()=> {
-    prompt("Copy address:", addr);
+    prompt("Copy address:", steam);
   });
 }
 
