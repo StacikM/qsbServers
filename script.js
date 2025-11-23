@@ -28,9 +28,11 @@ async function fetchLobbies() {
     const r = await fetch(API);
     if (!r.ok) throw new Error("Network error " + r.status);
     const data = await r.json();
-    // ensure stable format
+
     state.items = Array.isArray(data) ? data : [];
+
     applyFiltersAndRender();
+    populateRegions(); // ensure dropdown reflects updated list
   } catch (err) {
     el.stats.textContent = "Failed to load lobbies: " + err.message;
     el.list.innerHTML = "";
@@ -38,13 +40,15 @@ async function fetchLobbies() {
 }
 
 function applyFiltersAndRender() {
-  // region filter
   const region = el.regionFilter.value.trim();
   const q = el.search.value.trim().toLowerCase();
 
   let items = state.items.slice();
 
-  if (region) items = items.filter(i => (i.region || "").toLowerCase() === region.toLowerCase());
+  if (region)
+    items = items.filter(
+      i => (i.region || "").toLowerCase() === region.toLowerCase()
+    );
 
   if (q) {
     items = items.filter(i =>
@@ -54,31 +58,33 @@ function applyFiltersAndRender() {
     );
   }
 
-  // sort
   if (state.sort === "players_desc") {
-    items.sort((a,b)=> (b.players||0) - (a.players||0));
+    items.sort((a, b) => (b.players || 0) - (a.players || 0));
   } else if (state.sort === "players_asc") {
-    items.sort((a,b)=> (a.players||0) - (b.players||0));
-  } else if (state.sort === "newest") {
-    // no created timestamp available - fallback to current order
+    items.sort((a, b) => (a.players || 0) - (b.players || 0));
   }
 
   state.filtered = items;
-  state.page = Math.max(1, Math.min(state.page, Math.ceil(state.filtered.length / PAGE_SIZE) || 1));
+  state.page = Math.max(
+    1,
+    Math.min(state.page, Math.ceil(state.filtered.length / PAGE_SIZE) || 1)
+  );
+
   render();
 }
 
 function render() {
-  // stats
   el.stats.textContent = `Showing ${state.filtered.length} server(s). Total discovered: ${state.items.length}. Page ${state.page}.`;
 
-  // pagination
-  const totalPages = Math.max(1, Math.ceil(state.filtered.length / PAGE_SIZE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(state.filtered.length / PAGE_SIZE)
+  );
+
   el.prevPage.disabled = state.page <= 1;
   el.nextPage.disabled = state.page >= totalPages;
   el.pageInfo.textContent = `Page ${state.page} / ${totalPages}`;
 
-  // page items
   const start = (state.page - 1) * PAGE_SIZE;
   const pageItems = state.filtered.slice(start, start + PAGE_SIZE);
 
@@ -106,38 +112,66 @@ function renderCard(i) {
       <div class="joinRow">
         <div class="small">Players: ${players}/${maxPlayers}</div>
         <div>
-          <button class="joinBtn" onclick="onJoin('${ip}', ${port})">Show / Copy</button>
+          <button class="joinBtn" onclick="onJoin('${steam}')">Show / Copy</button>
         </div>
       </div>
     </div>
   `;
 }
 
-function onJoin(ip, port) {
-  const addr = `${ip}:${port}`;
-  navigator.clipboard?.writeText(steam).then(()=> {
-    alert(`Address copied: ${steam}\nUse this address in-game to connect.`);
-  }).catch(()=> {
-    prompt("Copy address:", steam);
-  });
+function onJoin(steamId) {
+  if (!steamId || steamId === "unknown") {
+    alert("No Steam ID available for this lobby.");
+    return;
+  }
+
+  navigator.clipboard?.writeText(steamId)
+    .then(() => {
+      alert(`Steam ID copied:\n${steamId}\nUse this Steam ID in-game to connect.`);
+    })
+    .catch(() => {
+      prompt("Copy Steam ID manually:", steamId);
+    });
 }
 
 function populateRegions() {
-  const regions = Array.from(new Set(state.items.map(i => i.region || "global"))).sort();
+  const regions = Array.from(
+    new Set(state.items.map(i => i.region || "global"))
+  ).sort();
+
   const cur = el.regionFilter.value;
-  el.regionFilter.innerHTML = `<option value="">All regions</option>` + regions.map(r => `<option value="${r}">${r}</option>`).join("");
+
+  el.regionFilter.innerHTML =
+    `<option value="">All regions</option>` +
+    regions.map(r => `<option value="${r}">${r}</option>`).join("");
+
   if (regions.includes(cur)) el.regionFilter.value = cur;
 }
 
 function wire() {
   el.refreshBtn.addEventListener("click", fetchLobbies);
-  el.search.addEventListener("input", () => { state.page = 1; applyFiltersAndRender(); });
-  el.regionFilter.addEventListener("change", () => { state.page = 1; applyFiltersAndRender(); });
-  el.sortBy.addEventListener("change", (e) => { state.sort = e.target.value; applyFiltersAndRender(); });
+  el.search.addEventListener("input", () => {
+    state.page = 1;
+    applyFiltersAndRender();
+  });
+  el.regionFilter.addEventListener("change", () => {
+    state.page = 1;
+    applyFiltersAndRender();
+  });
+  el.sortBy.addEventListener("change", e => {
+    state.sort = e.target.value;
+    applyFiltersAndRender();
+  });
   el.autoRefresh.addEventListener("change", toggleAutoRefresh);
-  el.prevPage.addEventListener("click", () => { state.page--; render(); });
-  el.nextPage.addEventListener("click", () => { state.page++; render(); });
-  // initial sort selection
+  el.prevPage.addEventListener("click", () => {
+    state.page--;
+    render();
+  });
+  el.nextPage.addEventListener("click", () => {
+    state.page++;
+    render();
+  });
+
   state.sort = el.sortBy.value;
 }
 
@@ -146,14 +180,14 @@ function toggleAutoRefresh() {
   if (el.autoRefresh.checked) {
     autoTimer = setInterval(fetchLobbies, AUTO_REFRESH_INTERVAL);
   } else {
-    clearInterval(autoTimer); autoTimer = null;
+    clearInterval(autoTimer);
+    autoTimer = null;
   }
 }
 
 async function init() {
   wire();
   await fetchLobbies();
-  populateRegions();
   if (el.autoRefresh.checked) toggleAutoRefresh();
 }
 
