@@ -57,6 +57,9 @@ input[type=text]{width:calc(100%-22px);padding:10px;margin-bottom:10px;backgroun
 </div>
 
 <script>
+document.getElementById('steamLoginBtn').onclick = () => {
+  window.location.href = 'https://server.ctksystem.com/qsbadmin/auth/steam';
+};
 // Check login status
 async function checkAuth() {
   const res = await fetch('https://server.ctksystem.com/qsbadmin/auth/check');
