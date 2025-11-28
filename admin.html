@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QSB Host Admin</title>
+<style>
+:root {
+  --bg:#1a1a1e; --card:#2a2a2e; --text:#e0e0e0;
+  --accent:#00bfff; --success:#28a745; --danger:#dc3545; --warn:#ffc107;
+}
+body { font-family:sans-serif; background:var(--bg); color:var(--text); padding:20px;}
+h1,h2 { margin:0 0 10px; }
+.card { background:var(--card); padding:20px; border-radius:8px; margin-bottom:20px;}
+button { padding:10px 15px; border:none; border-radius:5px; cursor:pointer; margin:3px; color:#fff; }
+.btn-primary{background:var(--accent);} .btn-success{background:var(--success);}
+.btn-danger{background:var(--danger);} .btn-warn{background:var(--warn); color:#222;}
+.full-width{width:100%;}
+input[type=text]{width:calc(100%-22px);padding:10px;margin-bottom:10px;background:#111;border:1px solid #444;color:#fff;border-radius:5px;}
+#players div{padding:8px; border-left:3px solid var(--accent); margin:5px 0; background:#111; border-radius:5px;}
+</style>
+</head>
+<body>
+
+<h1>QSB Host Admin Panel</h1>
+
+<div id="loginDiv" class="card">
+  <h2>Sign in as Host</h2>
+  <button class="btn-primary" id="steamLoginBtn">Sign in with Steam</button>
+</div>
+
+<div id="hostPanel" class="card" style="display:none;">
+  <h2>Your Lobby</h2>
+  <div id="hostInfo">Loading...</div>
+  <button class="btn-danger full-width" id="removeLobbyBtn">Remove Lobby</button>
+</div>
+
+<div class="card">
+  <h2>Players</h2>
+  <input type="text" id="playerName" placeholder="Player name">
+  <input type="text" id="reason" placeholder="Reason (optional)">
+  <div>
+    <button class="btn-danger" onclick="sendCommand('/kick')">Kick</button>
+    <button class="btn-danger" onclick="sendCommand('/ban')">Ban</button>
+    <button class="btn-warn" onclick="sendCommand('/mute')">Mute</button>
+    <button class="btn-success" onclick="sendCommand('/unmute')">Unmute</button>
+    <button class="btn-success" onclick="sendCommand('/unban')">Unban</button>
+  </div>
+  <div id="players">Loading...</div>
+</div>
+
+<div class="card">
+  <h2>Server Actions</h2>
+  <button class="btn-warn" onclick="sendCommand('/serverfreeze')">Freeze Server</button>
+  <button class="btn-success" onclick="sendCommand('/unserverfreeze')">Unfreeze Server</button>
+  <button class="btn-danger" onclick="sendCommand('/clearchat')">Clear All Chat</button>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+let hostSteamId = params.get('steamId');
+let hostLobby = null;
+
+document.getElementById('steamLoginBtn').onclick = () => {
+  window.location.href='/qsbadmin/auth/steam';
+};
+
+// --- Send command helper ---
+function sendCommand(prefix) {
+  const player = document.getElementById('playerName').value;
+  const reason = document.getElementById('reason').value || '';
+  let cmd = prefix;
+  if(player) cmd += ' ' + player;
+  if(reason && (prefix!=='/serverfreeze' && prefix!=='/unserverfreeze' && prefix!=='/clearchat')) cmd += ' ' + reason;
+
+  if(!hostLobby){ alert('No lobby selected'); return; }
+  fetch('/qsbadmin/command', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ lobbyId:hostLobby.lobbyId, command: cmd })
+  }).then(()=>{ console.log('Command queued:', cmd); });
+}
+
+// --- Fetch host lobby info ---
+async function fetchHostLobby(steamId){
+  if(!steamId) return;
+  try{
+    const res = await fetch(`/qsbadmin/lobby/${steamId}`);
+    if(!res.ok) throw new Error((await res.json()).error);
+    hostLobby = await res.json();
+    document.getElementById('loginDiv').style.display='none';
+    document.getElementById('hostPanel').style.display='block';
+    document.getElementById('hostInfo').innerHTML=
+      `Lobby ID: ${hostLobby.lobbyId}<br>
+       Players: ${hostLobby.players}/${hostLobby.maxPlayers}<br>
+       Region: ${hostLobby.region}<br>
+       Version: ${hostLobby.version}`;
+  }catch(err){ console.warn(err); }
+}
+
+// --- Remove lobby ---
+document.getElementById('removeLobbyBtn').onclick = async ()=>{
+  if(!hostLobby) return;
+  const res = await fetch('/qsbadmin/lobby/remove',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ lobbyId:hostLobby.lobbyId, secretKey:hostLobby.secretKey })
+  });
+  const data = await res.json();
+  if(data.ok){ alert('Lobby removed'); document.getElementById('hostPanel').style.display='none'; hostLobby=null; fetchPlayers(); }
+  else alert('Failed: '+data.error);
+};
+
+// --- Fetch connected players from C# WebAdminServer ---
+async function fetchPlayers(){
+  try{
+    const res = await fetch('/players'); 
+    const data = await res.json();
+    const div = document.getElementById('players');
+    div.innerHTML='';
+    if(!data.players || !data.players.length){ div.innerHTML='<i>No players connected.</i>'; return; }
+    data.players.forEach(p=>{ const d=document.createElement('div'); d.textContent=p; div.appendChild(d); });
+  }catch(err){ console.error(err); }
+}
+
+setInterval(fetchPlayers,2000);
+fetchPlayers();
+if(hostSteamId) fetchHostLobby(hostSteamId);
+</script>
+</body>
+</html>
