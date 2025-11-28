@@ -62,7 +62,7 @@ let hostSteamId = params.get('steamId');
 let hostLobby = null;
 
 document.getElementById('steamLoginBtn').onclick = () => {
-  window.location.href='/qsbadmin/auth/steam';
+  window.location.href='https://server.ctksystem.com/qsbadmin/auth/steam';
 };
 
 // --- Send command helper ---
@@ -74,7 +74,7 @@ function sendCommand(prefix) {
   if(reason && (prefix!=='/serverfreeze' && prefix!=='/unserverfreeze' && prefix!=='/clearchat')) cmd += ' ' + reason;
 
   if(!hostLobby){ alert('No lobby selected'); return; }
-  fetch('/qsbadmin/command', {
+  fetch('https://server.ctksystem.com/qsbadmin/command', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({ lobbyId:hostLobby.lobbyId, command: cmd })
@@ -85,7 +85,7 @@ function sendCommand(prefix) {
 async function fetchHostLobby(steamId){
   if(!steamId) return;
   try{
-    const res = await fetch(`/qsbadmin/lobby/${steamId}`);
+    const res = await fetch(`https://server.ctksystem.com/qsbadmin/lobby/${steamId}`);
     if(!res.ok) throw new Error((await res.json()).error);
     hostLobby = await res.json();
     document.getElementById('loginDiv').style.display='none';
@@ -101,7 +101,7 @@ async function fetchHostLobby(steamId){
 // --- Remove lobby ---
 document.getElementById('removeLobbyBtn').onclick = async ()=>{
   if(!hostLobby) return;
-  const res = await fetch('/qsbadmin/lobby/remove',{
+  const res = await fetch('https://server.ctksystem.com/qsbadmin/lobby/remove',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({ lobbyId:hostLobby.lobbyId, secretKey:hostLobby.secretKey })
@@ -114,7 +114,7 @@ document.getElementById('removeLobbyBtn').onclick = async ()=>{
 // --- Fetch connected players from C# WebAdminServer ---
 async function fetchPlayers(){
   try{
-    const res = await fetch('/players'); 
+    const res = await fetch('https://server.ctksystem.com/players'); 
     const data = await res.json();
     const div = document.getElementById('players');
     div.innerHTML='';
