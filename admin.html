@@ -61,6 +61,13 @@ input[type=text]{width:calc(100%-22px);padding:10px;margin-bottom:10px;backgroun
 </div>
 
 <div class="card">
+  <h2>Send Custom Command</h2>
+  <input type="text" id="customCommand" placeholder="Type any command here" class="full-width">
+  <button class="btn-primary full-width" id="sendCustomCommandBtn">Send Command</button>
+</div>
+
+  
+<div class="card">
   <h2>Command Console</h2>
   <div class="console" id="commandConsole"></div>
 </div>
@@ -85,6 +92,24 @@ async function authFetch(url, options={}) {
 let hostLobby = null;
 let lobbyStartTime = null;
 
+document.getElementById('sendCustomCommandBtn').onclick = () => {
+  const cmdInput = document.getElementById('customCommand');
+  const cmd = cmdInput.value.trim();
+  if (!cmd) return;
+
+  authFetch('https://server.ctksystem.com/qsbadmin/command', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ command: cmd })
+  }).then(() => {
+    document.getElementById('commandConsole').innerHTML += `> ${cmd}<br>`;
+    cmdInput.value = ''; // auto-clear
+  }).catch(() => {
+    document.getElementById('commandConsole').innerHTML += `<span style="color:red;">Failed: ${cmd}</span><br>`;
+  });
+};
+
+  
 // Steam login button
 document.getElementById('steamLoginBtn').onclick = () => {
   window.location.href = 'https://server.ctksystem.com/qsbadmin/auth/steam';
