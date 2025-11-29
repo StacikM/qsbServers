@@ -62,7 +62,9 @@ document.getElementById('steamLoginBtn').onclick = () => {
 };
 // Check login status
 async function checkAuth() {
-  const res = await fetch('https://server.ctksystem.com/qsbadmin/auth/check');
+  const res = await fetch('https://server.ctksystem.com/qsbadmin/auth/check', {
+    credentials: 'include'
+  });
   const data = await res.json();
   if (data.authenticated) {
     document.getElementById('loginDiv').style.display = 'none';
@@ -71,9 +73,10 @@ async function checkAuth() {
   }
 }
 
-// Fetch your lobby
 async function fetchMyLobby() {
-  const res = await fetch('https://server.ctksystem.com/qsbadmin/lobby');
+  const res = await fetch('https://server.ctksystem.com/qsbadmin/lobby', {
+    credentials: 'include'
+  });
   if (!res.ok) return document.getElementById('hostInfo').textContent = 'No active lobby';
   const lobby = await res.json();
   hostLobby = lobby;
@@ -84,6 +87,14 @@ async function fetchMyLobby() {
     Version: ${lobby.version}
   `;
 }
+
+document.getElementById('removeLobbyBtn').onclick = () => {
+  fetch('https://server.ctksystem.com/qsbadmin/lobby/remove', {
+    method: 'POST',
+    credentials: 'include'
+  }).then(() => location.reload());
+};
+
 
 // Send command
 function sendCommand(prefix) {
@@ -101,13 +112,6 @@ function sendCommand(prefix) {
   });
 }
 
-// Remove lobby button
-document.getElementById('removeLobbyBtn').onclick = () => {
-  fetch('https://server.ctksystem.com/qsbadmin/lobby/remove', {
-    method: 'POST',
-    credentials: 'include'
-  }).then(() => location.reload());
-};
 
 // Init
 checkAuth();
